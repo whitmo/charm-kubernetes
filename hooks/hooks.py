@@ -152,16 +152,19 @@ def register_machine(apiserver, retry=False):
     cpus = os.sysconf("SC_NPROCESSORS_ONLN")
 
     request = _encode({
-        'kind': 'Minion',
+        'Kind': 'Minion',
         # These can only differ for cloud provider backed instances?
-        'id': private_address,
-        'hostIP': private_address,
+        'ID': private_address,
+        'HostIP': private_address,
+        'metadata': {
+            'name': private_address,
+        },
         'resources': {
             'capacity': {
                 'mem': mem + ' K',
                 'cpu': cpus}}})
 
-    print("Registration request %s" % request)
+    # print("Registration request %s" % request)
     conn = httplib.HTTPConnection(parsed.hostname, parsed.port)
     conn.request(
         "POST", "/api/v1beta1/minions",
@@ -169,7 +172,9 @@ def register_machine(apiserver, retry=False):
         headers)
 
     response = conn.getresponse()
-    result = json.loads(response.read())
+    body = response.read()
+    print(body)
+    result = json.loads(body)
     print("Response status:%s reason:%s body:%s" % (
         response.status, response.reason, result))
 
