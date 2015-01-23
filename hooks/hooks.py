@@ -1,5 +1,7 @@
 #!/usr/bin/python
-
+"""
+The main hook file that is called by Juju.
+"""
 import json
 import httplib
 import os
@@ -10,14 +12,31 @@ import sys
 import urlparse
 
 from charmhelpers.core import hookenv, host
+from kubernetes_installer import KubernetesInstaller
+
 
 hooks = hookenv.Hooks()
 
 
 @hooks.hook('config-changed')
 def config_changed():
-    """Called whenever our configuration changes. no op atm.
     """
+    On the execution of the juju event 'config-changed' this function
+    determines the appropriate architecture and the configured version to
+    install kubernetes binary file from the tar file in the charm or using
+    the gsutil command.
+    """
+    # Get the package architecture, rather than the from the kernel (uname -m).
+    arch = subprocess.check_output(['dpkg', '--print-architecture']).strip()
+    # Get the version of kubernetes to install.
+    version = subprocess.check_output(['config-get', 'version']).strip()
+    # Construct the kubernetes tar file name from the arch and version.
+    kubernetes_tar_file = 'kubernetes-{0}-{1}.tar.gz'.format(version, arch)
+    charm_dir = os.environ.get('CHARM_DIR', '')
+    kubernetes_file = os.path.join(charm_dir, 'files', kubernetes_tar_file)
+    installer = KubernetesInstaller(arch, version, kubernetes_file)
+    # Install the kubernetes binary files in the /opt/kubernetes/bin directory.
+    installer.install('/opt/kubernetes/bin')
 
 
 @hooks.hook('etcd-relation-changed',

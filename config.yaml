@@ -1,0 +1,5 @@
+options:
+  version:
+    type: string
+    default: "v0.8.1"
+    description: "The kubernetes version to install in the charm."

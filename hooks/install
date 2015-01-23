@@ -6,25 +6,17 @@ set -ex
 
 echo "Installing kubernetes-node on $JUJU_UNIT_NAME"
 
-TGT_DIR=/usr/local/bin
-VERSION=0.8.1
+apt-get update -qq
+apt-get install -qy bridge-utils build-essential libssl-dev libffi-dev python-dev python-pip wget
+pip install gsutil
 
-#echo deb https://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list
-#apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 \
-#            --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
-#apt-get update
-apt-get install -qy bridge-utils
-
-#apt-get install -y -q docker.io
+VERSION=`config-get version`
+ARCH=`dpkg --print-architecture`
+# List the files available for the version and architecture error if none exist.
+gsutil ls gs://kubernetes-release/release/$VERSION/bin/linux/$ARCH/
 
 # nsinit is broken / docker exec in 1.3 / noted in kub #1469 nsenter is better
 # golang git mercurial bzr
-
-bzip2 -k -c -d $CHARM_DIR/files/$VERSION/kubelet.amd64.bz2 > $TGT_DIR/kubelet
-chmod 555 $TGT_DIR/kubelet
-
-bzip2 -k -c -d $CHARM_DIR/files/$VERSION/proxy.amd64.bz2 > $TGT_DIR/proxy
-chmod 555 $TGT_DIR/proxy
 
 groupadd kubernetes
 useradd -d /var/lib/kubernetes \
