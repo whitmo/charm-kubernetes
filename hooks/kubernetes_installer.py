@@ -1,8 +1,7 @@
-#!/usr/bin/python
-
 import os
 import shutil
 import subprocess
+from path import path
 
 
 class KubernetesInstaller():
@@ -18,21 +17,21 @@ class KubernetesInstaller():
                         'kubelet': '/usr/local/bin/kubelet'}
         self.arch = arch
         self.version = version
-        self.kubernetes_file = kubernetes_file
+        self.kubernetes_file = path(kubernetes_file)
 
-    def install(self, output_dir='/opt/kubernetes/bin'):
+    def install(self, output_dir=path('/opt/kubernetes/bin')):
         """ Install kubernetes binary files from the tar file or gsutil. """
-        if os.path.isdir(output_dir):
+        if output_dir.isdir():
             # Remote old content to remain idempotent.
-            shutil.rmtree(output_dir)
+            output_dir.rmtree()
+
         # Create the output directory.
-        os.makedirs(output_dir)
+        output_dir.makedirs()
 
         # Write the version and arch to a dot file.
-        with open(os.path.join(output_dir, '.kubernetes'), 'w') as file:
-            file.write('{0} {1}'.format(self.version, self.arch))
+        (output_dir / '.kubernetes').write_text('{0} {1}'.format(self.version, self.arch))
 
-        if os.path.exists(self.kubernetes_file):
+        if self.kubernetes_file.exists():
             # Untar the file to the output directory.
             command = 'tar -xvzf {0} -C {1}'.format(self.kubernetes_file,
                                                     output_dir)
@@ -44,13 +43,13 @@ class KubernetesInstaller():
             self.get_kubernetes_gsutil(output_dir)
 
         # Create the symbolic links to the real kubernetes binaries.
+        usr_local_bin = path('/usr/local/bin')
         for key, value in self.aliases.iteritems():
-            target = os.path.join(output_dir, key)
-            link = value
-            ln_command = 'ln -s {0} {1}'.format(target, link)
-            command = ln_command.format(target, link)
-            print(command)
-            subprocess.check_call(command.split())
+            target = output_dir / key
+            link = usr_local_bin / value
+            if link.exists():
+                link.remove()
+            target.symlink(link)
 
     def get_kubernetes_gsutil(self, directory):
         """ Download the kubernetes binary objects from gsutil. """
