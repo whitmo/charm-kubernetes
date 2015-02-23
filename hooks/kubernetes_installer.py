@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 from path import path
 
@@ -29,7 +28,8 @@ class KubernetesInstaller():
         output_dir.makedirs()
 
         # Write the version and arch to a dot file.
-        (output_dir / '.kubernetes').write_text('{0} {1}'.format(self.version, self.arch))
+        (output_dir / '.kubernetes').write_text('{0} {1}'.format(self.version,
+                                                                 self.arch))
 
         if self.kubernetes_file.exists():
             # Untar the file to the output directory.

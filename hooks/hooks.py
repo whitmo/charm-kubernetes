@@ -165,7 +165,7 @@ def register_machine(apiserver, retry=False):
     parsed = urlparse.urlparse(apiserver)
     headers = {"Content-type": "application/json",
                "Accept": "application/json"}
-    #identity = hookenv.local_unit().replace('/', '-')
+    # identity = hookenv.local_unit().replace('/', '-')
     private_address = hookenv.unit_private_ip()
 
     with open('/proc/meminfo') as fh:
@@ -219,7 +219,7 @@ def setup_kubernetes_group():
     output = subprocess.check_output(['groups', 'kubernetes'])
 
     # TODO: check group exists
-    if not 'docker' in output:
+    if 'docker' not in output:
         subprocess.check_output(
             ['usermod', '-a', '-G', 'docker', 'kubernetes'])
 
