@@ -17,33 +17,35 @@ from path import path
 
 hooks = hookenv.Hooks()
 
+def download_binaries():
 
-@hooks.hook('config-changed')
-def config_changed():
+def
+@hooks.hook('api-relation-changed')
+def api_relation_changed():
     """
-    On the execution of the juju event 'config-changed' this function
-    determines the appropriate architecture and the configured version to
-    install kubernetes binary file from the tar file in the charm or using
-    the gsutil command.
+    On the relation to the api server, this function determines the appropriate
+    architecture and the configured version to copy the kubernetes binary files
+    from the kubernetes-master charm and installs it locally on this machine.
     """
     # Get the package architecture, rather than the from the kernel (uname -m).
     arch = subprocess.check_output(['dpkg', '--print-architecture']).strip()
-
     # Get the version of kubernetes to install.
-    version = subprocess.check_output(['config-get', 'version']).strip()
-
-    # Construct the kubernetes tar file name from the arch and version.
-    kubernetes_tar_file = 'kubernetes-{0}-{1}.tar.gz'.format(version, arch)
-    charm_dir = os.environ.get('CHARM_DIR', '')
-    kubernetes_file = os.path.join(charm_dir, 'files', kubernetes_tar_file)
-    installer = KubernetesInstaller(arch, version, kubernetes_file)
-
-    # Install the kubernetes binary files in the /opt/kubernetes/bin directory.
-    installer.install(path('/opt/kubernetes/bin'))
+    version = subprocess.check_output(['relation-get', 'version']).strip()
+    kubernetes_dir = path('/opt/kubernetes/bin')
+    version_file = kubernetes_dir / '.version'
+    if version_file.exists():
+        previous_version = version_file.text()
+        if version == previous_version:
+            exit(0)
+    # Get the kubernetes-master address.
+    server = subprocess.check_output(['relation-get', 'private-address']).strip()
+    installer = KubernetesInstaller(arch, version, server)
+    installer.download(kubernetes_dir)
+    installer.install()
+    relation_changed()
 
 
 @hooks.hook('etcd-relation-changed',
-            'api-relation-changed',
             'network-relation-changed')
 def relation_changed():
     """Connect the parts and go :-)
@@ -113,7 +115,7 @@ def _bind_addr(addr):
 def _encode(d):
     for k, v in d.items():
         if isinstance(v, unicode):
-            d[k] = v.encode('utf8')
+            d[k] = v.encode('utf8')os.
     return d
 
 
@@ -145,7 +147,7 @@ def render_upstart(name, data):
         os.environ.get('CHARM_DIR'), 'files', '%s.upstart.tmpl' % name)
 
     with open(tmpl_path) as fh:
-        tmpl = fh.read()
+        tmpl = fh.read()os.
     rendered = tmpl % data
 
     tgt_path = '/etc/init/%s.conf' % name
