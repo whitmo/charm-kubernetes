@@ -17,9 +17,6 @@ from path import path
 
 hooks = hookenv.Hooks()
 
-def download_binaries():
-
-def
 @hooks.hook('api-relation-changed')
 def api_relation_changed():
     """
@@ -31,16 +28,21 @@ def api_relation_changed():
     arch = subprocess.check_output(['dpkg', '--print-architecture']).strip()
     # Get the version of kubernetes to install.
     version = subprocess.check_output(['relation-get', 'version']).strip()
+    print('Relation version: ', version)
+    if not version:
+        print('No version present in the relation.')
+        exit(0)
     kubernetes_dir = path('/opt/kubernetes/bin')
     version_file = kubernetes_dir / '.version'
     if version_file.exists():
         previous_version = version_file.text()
+        print('Previous version: ', previous_version)
         if version == previous_version:
             exit(0)
     # Get the kubernetes-master address.
     server = subprocess.check_output(['relation-get', 'private-address']).strip()
-    installer = KubernetesInstaller(arch, version, server)
-    installer.download(kubernetes_dir)
+    installer = KubernetesInstaller(arch, version, server, kubernetes_dir)
+    installer.download()
     installer.install()
     relation_changed()
 
@@ -115,7 +117,7 @@ def _bind_addr(addr):
 def _encode(d):
     for k, v in d.items():
         if isinstance(v, unicode):
-            d[k] = v.encode('utf8')os.
+            d[k] = v.encode('utf8')
     return d
 
 
@@ -147,7 +149,7 @@ def render_upstart(name, data):
         os.environ.get('CHARM_DIR'), 'files', '%s.upstart.tmpl' % name)
 
     with open(tmpl_path) as fh:
-        tmpl = fh.read()os.
+        tmpl = fh.read()
     rendered = tmpl % data
 
     tgt_path = '/etc/init/%s.conf' % name

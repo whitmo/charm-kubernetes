@@ -9,31 +9,38 @@ class KubernetesInstaller():
     from a tar file or by using gsutil.
     """
 
-    def __init__(self, arch, version, master):
+    def __init__(self, arch, version, master, output_dir):
         """ Gather the required variables for the install. """
         # The kubernetes charm needs certain commands to be aliased.
-        self.aliases = {'kube-proxy': '/usr/local/bin/proxy',
-                        'kubelet': '/usr/local/bin/kubelet'}
+        self.aliases = {'kube-proxy': 'proxy',
+                        'kubelet': 'kubelet'}
         self.arch = arch
         self.version = version
         self.master = master
+        self.output_dir = output_dir
 
-    def download(self, download_dir=path('/opt/kubernetes/bin')):
+    def download(self):
         """ Download the kuberentes binaries from the kubernetes master. """
-        url = 'http://{0}:8080/kubernetes/{1}/bin/linux/{2}/'.format(
+        url = 'http://{0}/kubernetes/{1}/bin/linux/{2}'.format(
             self.master, self.version, self.arch)
-        if not download_dir.exists():
-            download_dir.makedirs_p()
+        if not self.output_dir.isdir():
+            self.output_dir.makedirs_p()
+
         for key in self.aliases:
             uri = '{0}/{1}'.format(url, key)
-            wget = 'wget -nv {0} -O {1}'.format(uri, self.download_dir)
-        version = download_dir / '.version'
+            destination = self.output_dir / key
+            wget = 'wget -nv {0} -O {1}'.format(uri, destination)
+            print(wget)
+            output = subprocess.check_output(wget.split())
+            print(output)
+        version = self.output_dir / '.version'
+        # Write the last version to be downloaded to the .version file.
         version.write_text(self.version)
 
     def install(self, install_dir=path('/usr/local/bin')):
-        """ Copy the binary files to the install directory. """
+        """ Create links to the binary files to the install directory. """
 
-        if not install_dir.exists()
+        if not install_dir.isdir():
             install_dir.makedirs_p()
 
         # Create the symbolic links to the real kubernetes binaries.
