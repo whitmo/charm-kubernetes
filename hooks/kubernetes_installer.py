@@ -21,7 +21,7 @@ class KubernetesInstaller():
 
     def download(self):
         """ Download the kuberentes binaries from the kubernetes master. """
-        url = 'http://{0}/kubernetes/{1}/bin/linux/{2}'.format(
+        url = 'http://{0}/kubernetes/{1}/local/bin/linux/{2}'.format(
             self.master, self.version, self.arch)
         if not self.output_dir.isdir():
             self.output_dir.makedirs_p()
