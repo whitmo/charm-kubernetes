@@ -5,8 +5,7 @@ from path import path
 
 class KubernetesInstaller():
     """
-    This class contains the logic needed to install kuberentes binary files
-    from a tar file or by using gsutil.
+    This class contains the logic needed to install kuberentes binary files.
     """
 
     def __init__(self, arch, version, master, output_dir):
@@ -33,6 +32,7 @@ class KubernetesInstaller():
             print(wget)
             output = subprocess.check_output(wget.split())
             print(output)
+            destination.chmod(0o755)
         version = self.output_dir / '.version'
         # Write the last version to be downloaded to the .version file.
         version.write_text(self.version)
