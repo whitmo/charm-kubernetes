@@ -17,6 +17,7 @@ from path import path
 
 hooks = hookenv.Hooks()
 
+
 @hooks.hook('api-relation-changed')
 def api_relation_changed():
     """
@@ -24,26 +25,37 @@ def api_relation_changed():
     architecture and the configured version to copy the kubernetes binary files
     from the kubernetes-master charm and installs it locally on this machine.
     """
+    hookenv.log('Starting api-relation-changed')
+    charm_dir = path(hookenv.charm_dir())
     # Get the package architecture, rather than the from the kernel (uname -m).
     arch = subprocess.check_output(['dpkg', '--print-architecture']).strip()
+    kubernetes_bin_dir = path('/opt/kubernetes/bin')
     # Get the version of kubernetes to install.
     version = subprocess.check_output(['relation-get', 'version']).strip()
     print('Relation version: ', version)
     if not version:
         print('No version present in the relation.')
         exit(0)
-    kubernetes_dir = path('/opt/kubernetes/bin')
-    version_file = kubernetes_dir / '.version'
+    version_file = charm_dir / '.version'
     if version_file.exists():
         previous_version = version_file.text()
         print('Previous version: ', previous_version)
         if version == previous_version:
             exit(0)
+    # Can not download binaries while the service is running, so stop it.
+    # TODO: Figure out a better way to handle upgraded kubernetes binaries.
+    for service in ('kubelet', 'proxy'):
+        if host.service_running(service):
+            host.service_stop(service)
+    command = ['relation-get', 'private-address']
     # Get the kubernetes-master address.
-    server = subprocess.check_output(['relation-get', 'private-address']).strip()
-    installer = KubernetesInstaller(arch, version, server, kubernetes_dir)
+    server = subprocess.check_output(command).strip()
+    print('Kuberentes master private address: ', server)
+    installer = KubernetesInstaller(arch, version, server, kubernetes_bin_dir)
     installer.download()
     installer.install()
+    # Write the most recently installed version number to the file.
+    version_file.write_lines(version)
     relation_changed()
 
 
