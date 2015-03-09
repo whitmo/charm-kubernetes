@@ -1,4 +1,3 @@
-import os
 import subprocess
 from path import path
 
@@ -33,9 +32,6 @@ class KubernetesInstaller():
             output = subprocess.check_output(wget.split())
             print(output)
             destination.chmod(0o755)
-        version = self.output_dir / '.version'
-        # Write the last version to be downloaded to the .version file.
-        version.write_text(self.version)
 
     def install(self, install_dir=path('/usr/local/bin')):
         """ Create links to the binary files to the install directory. """
