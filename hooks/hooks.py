@@ -55,7 +55,7 @@ def api_relation_changed():
     installer.download()
     installer.install()
     # Write the most recently installed version number to the file.
-    version_file.write_lines(version)
+    version_file.write_text(version)
     relation_changed()
 
 
