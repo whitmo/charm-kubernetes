@@ -7,17 +7,15 @@ set -ex
 echo "Installing kubernetes-node on $JUJU_UNIT_NAME"
 
 apt-get update -qq
-apt-get install -qy bridge-utils build-essential libssl-dev libffi-dev python-dev python-pip wget
-pip install gsutil path.py
+apt-get install -q -y \
+    bridge-utils \
+    python-dev \
+    python-pip \
+    wget
 
-VERSION=`config-get version`
-ARCH=`dpkg --print-architecture`
-# List the files available for the version and architecture error if none exist.
-gsutil ls gs://kubernetes-release/release/$VERSION/bin/linux/$ARCH/
+pip install path.py
 
-# nsinit is broken / docker exec in 1.3 / noted in kub #1469 nsenter is better
-# golang git mercurial bzr
-
+# Create the necessary kubernetes group.
 groupadd kubernetes
 useradd -d /var/lib/kubernetes \
     -g kubernetes \

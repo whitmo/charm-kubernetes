@@ -18,32 +18,48 @@ from path import path
 hooks = hookenv.Hooks()
 
 
-@hooks.hook('config-changed')
-def config_changed():
+@hooks.hook('api-relation-changed')
+def api_relation_changed():
     """
-    On the execution of the juju event 'config-changed' this function
-    determines the appropriate architecture and the configured version to
-    install kubernetes binary file from the tar file in the charm or using
-    the gsutil command.
+    On the relation to the api server, this function determines the appropriate
+    architecture and the configured version to copy the kubernetes binary files
+    from the kubernetes-master charm and installs it locally on this machine.
     """
+    hookenv.log('Starting api-relation-changed')
+    charm_dir = path(hookenv.charm_dir())
     # Get the package architecture, rather than the from the kernel (uname -m).
     arch = subprocess.check_output(['dpkg', '--print-architecture']).strip()
-
+    kubernetes_bin_dir = path('/opt/kubernetes/bin')
     # Get the version of kubernetes to install.
-    version = subprocess.check_output(['config-get', 'version']).strip()
-
-    # Construct the kubernetes tar file name from the arch and version.
-    kubernetes_tar_file = 'kubernetes-{0}-{1}.tar.gz'.format(version, arch)
-    charm_dir = os.environ.get('CHARM_DIR', '')
-    kubernetes_file = os.path.join(charm_dir, 'files', kubernetes_tar_file)
-    installer = KubernetesInstaller(arch, version, kubernetes_file)
-
-    # Install the kubernetes binary files in the /opt/kubernetes/bin directory.
-    installer.install(path('/opt/kubernetes/bin'))
+    version = subprocess.check_output(['relation-get', 'version']).strip()
+    print('Relation version: ', version)
+    if not version:
+        print('No version present in the relation.')
+        exit(0)
+    version_file = charm_dir / '.version'
+    if version_file.exists():
+        previous_version = version_file.text()
+        print('Previous version: ', previous_version)
+        if version == previous_version:
+            exit(0)
+    # Can not download binaries while the service is running, so stop it.
+    # TODO: Figure out a better way to handle upgraded kubernetes binaries.
+    for service in ('kubelet', 'proxy'):
+        if host.service_running(service):
+            host.service_stop(service)
+    command = ['relation-get', 'private-address']
+    # Get the kubernetes-master address.
+    server = subprocess.check_output(command).strip()
+    print('Kubernetes master private address: ', server)
+    installer = KubernetesInstaller(arch, version, server, kubernetes_bin_dir)
+    installer.download()
+    installer.install()
+    # Write the most recently installed version number to the file.
+    version_file.write_text(version)
+    relation_changed()
 
 
 @hooks.hook('etcd-relation-changed',
-            'api-relation-changed',
             'network-relation-changed')
 def relation_changed():
     """Connect the parts and go :-)
