@@ -50,7 +50,7 @@ def api_relation_changed():
     command = ['relation-get', 'private-address']
     # Get the kubernetes-master address.
     server = subprocess.check_output(command).strip()
-    print('Kuberentes master private address: ', server)
+    print('Kubernetes master private address: ', server)
     installer = KubernetesInstaller(arch, version, server, kubernetes_bin_dir)
     installer.download()
     installer.install()
