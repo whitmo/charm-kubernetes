@@ -2,7 +2,7 @@ name: kubernetes
 summary: Container Cluster Management Node
 maintainers:
     - Matt Bruzek <matthew.bruzek@canonical.com>
-    - Whit Morris <whit.morris@canonical.com>
+    - Whit Morriss <whit.morriss@canonical.com>
     - Charles Butler <charles.butler@canonical.com>
 description: |
   Provides a kubernetes node for running containers
@@ -17,4 +17,3 @@ requires:
     interface: kubernetes-api
   network:
     interface: overlay-network
-
