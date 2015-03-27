@@ -67,7 +67,7 @@ def relation_changed():
     template_data = get_template_data()
 
     # Check required keys
-    for k in ('etcd_servers', 'kubeapi_server', 'overlay_type'):
+    for k in ('etcd_servers', 'kubeapi_server'):
         if not template_data.get(k):
             print("Missing data for %s %s" % (k, template_data))
             return
