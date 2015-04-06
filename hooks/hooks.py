@@ -216,11 +216,11 @@ def register_machine(apiserver, retry=False):
     if response.status in (200, 201):
         print("Registered")
     elif response.status in (409,):
-        print("Status conflict!")
+        print("Status conflict")
         # The kubernetes API documentation suggests doing a put in this case:
         # issue a PUT/update to modify the existing object
         conn.request("PUT", "/api/v1beta1/minions", json.dumps(request),
-            headers)
+                     headers)
     elif not retry and response.status in (500,) and result.get(
             'message', '').startswith('The requested resource does not exist'):
         # There's something fishy in the kube api here (0.4 dev), first time we
