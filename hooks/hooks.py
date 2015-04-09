@@ -189,20 +189,34 @@ def register_machine(apiserver, retry=False):
         mem = info.strip().split(":")[1].strip().split()[0]
     cpus = os.sysconf("SC_NPROCESSORS_ONLN")
 
-    request = _encode({
-        'Kind': 'Minion',
-        # These can only differ for cloud provider backed instances?
-        'ID': private_address,
-        'HostIP': private_address,
-        'metadata': {
-            'name': private_address,
-        },
-        'resources': {
-            'capacity': {
-                'mem': mem + ' K',
-                'cpu': cpus}}})
+    request = _encode(
+        {
+            'Kind': 'Minion',
+            # These can only differ for cloud provider backed instances?
+            'ID': private_address,
+            'HostIP': private_address,
+            'metadata': {
+                'name': private_address,
+            },
+            'resources': {
+                'capacity': {
+                    'mem': mem + ' K',
+                    'cpu': cpus
+                }
+            },
+            'status': {
+                'Capacity': {
+                    'mem': mem + ' K',
+                    'cpu': cpus
+                }
+            },
+            'spec': {
+                'ExternalID': private_address,
+            }
+        }
+    )
 
-    # print("Registration request %s" % request)
+    print("Registration request %s" % request)
     conn = httplib.HTTPConnection(parsed.hostname, parsed.port)
     conn.request("POST", "/api/v1beta1/minions", json.dumps(request), headers)
 
@@ -217,10 +231,12 @@ def register_machine(apiserver, retry=False):
         print("Registered")
     elif response.status in (409,):
         print("Status conflict")
-        # The kubernetes API documentation suggests doing a put in this case:
-        # issue a PUT/update to modify the existing object
-        conn.request("PUT", "/api/v1beta1/minions", json.dumps(request),
-                     headers)
+        # Indicates that either the resource the client attempted to create
+        # already exists or the requested update operation cannot be completed
+        # due to a conflict.
+        # Either change the identifier and try again, or GET and compare the
+        # fields in the pre-existing object and issue a PUT/update to modify
+        # the existing object.
     elif not retry and response.status in (500,) and result.get(
             'message', '').startswith('The requested resource does not exist'):
         # There's something fishy in the kube api here (0.4 dev), first time we
