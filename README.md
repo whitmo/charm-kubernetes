@@ -15,8 +15,13 @@ scaled to meet your needs
 Etcd is a key value store for Kubernetes.  All persistent master state
 is stored in `etcd`.
 
-### Flannel
-Flannel is a [software defined networking](http://en.wikipedia.org/wiki/Software-defined_networking) component that provides individual subnets for each machine in the cluster.
+### Flannel-docker
+Flannel is a
+[software defined networking](http://en.wikipedia.org/wiki/Software-defined_networking)
+component that provides individual subnets for each machine in the cluster.
+
+### Docker
+Docker is an open platform for distributing applications for system administrators.
 
 ### Kubernetes master
 The controlling unit in a Kubernetes cluster is called the master.  It is the
@@ -34,13 +39,15 @@ communicate with the master and run the workloads that are assigned to them.
 
 To deploy a Kubernetes environment in Juju :
 
-
-    juju deploy cs:~hazmat/trusty/etcd
-    juju deploy cs:~hazmat/trusty/flannel
+    juju deploy cs:~kubernetes/trusty/etcd
+    juju deploy cs:trusty/flannel-docker
+    juju deploy cs:trusty/docker
     juju deploy local:trusty/kubernetes-master
     juju deploy local:trusty/kubernetes
 
-    juju add-relation etcd flannel
+    juju add-relation etcd flannel-docker
+    juju add-relation flannel-docker:network docker:network
+    juju add-relation flannel-docker:docker-host docker
     juju add-relation etcd kubernetes
     juju add-relation etcd kubernetes-master
     juju add-relation kubernetes kubernetes-master
@@ -53,11 +60,10 @@ orchestrated directly in the Juju Graphical User Interface, when using
 `juju quickstart`:
 
     juju quickstart https://raw.githubusercontent.com/whitmo/bundle-kubernetes/master/bundles.yaml
-    juju expose kubernetes-master
 
 
-For more information on the recommended bundle deployment, see the documentation
-[here](https://github.com/whitmo/bundle-kubernetes)
+For more information on the recommended bundle deployment, see the
+[Kubernetes bundle documentation](https://github.com/whitmo/bundle-kubernetes)
 
 
 #### Post Deployment
@@ -76,7 +82,7 @@ binary (available in the releases binary tarball) and point it to the master wit
 For you convenience this charm supports changing the version of kubernetes binaries.
 This can be done through the Juju GUI or on the command line:
 
-    juju set kubernetes version=”v0.8.2”
+    juju set kubernetes version=”v0.10.0”
 
 If the charm does not already contain the tar file with the desired architecture
 and version it will attempt to download the kubernetes binaries using the gsutil
