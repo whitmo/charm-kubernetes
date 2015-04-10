@@ -15,9 +15,9 @@ test: virtualenv
 functional-test:
 	@bundletester
 
-release: check-path
+release: check-path virtualenv
 	@.venv/bin/pip install git-vendor
-	@.venv/bin/git-vendor sync -d $KUBERNETES_BZR
+	@.venv/bin/git-vendor sync -d ${KUBERNETES_BZR}
 
 check-path:
 ifndef KUBERNETES_BZR
