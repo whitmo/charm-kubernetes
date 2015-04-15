@@ -189,36 +189,33 @@ def register_machine(apiserver, retry=False):
         mem = info.strip().split(":")[1].strip().split()[0]
     cpus = os.sysconf("SC_NPROCESSORS_ONLN")
 
+    # This is the v1beta3 api json object that registers nodes.
     request = _encode(
         {
-            'Kind': 'Minion',
-            # These can only differ for cloud provider backed instances?
-            'ID': private_address,
-            'HostIP': private_address,
-            'metadata': {
-                'name': private_address,
-            },
-            'resources': {
-                'capacity': {
-                    'mem': mem + ' K',
-                    'cpu': cpus
-                }
-            },
-            'status': {
-                'Capacity': {
-                    'mem': mem + ' K',
-                    'cpu': cpus
-                }
-            },
-            'spec': {
-                'ExternalID': private_address,
+          "creationTimestamp": "",
+          "kind": "Minion",
+          "name": private_address,
+          "metadata": {
+            "name": private_address,
+          },
+          "spec": {
+            "externalID": private_address,
+            "capacity": {
+                "mem": mem + " K",
+                "cpu": cpus
             }
+          },
+          "status": {
+            "conditions": [],
+            "hostIP": private_address,
+          }
         }
-    )
+     )
+
 
     print("Registration request %s" % request)
     conn = httplib.HTTPConnection(parsed.hostname, parsed.port)
-    conn.request("POST", "/api/v1beta1/minions", json.dumps(request), headers)
+    conn.request("POST", "/api/v1beta3/nodes", json.dumps(request), headers)
 
     response = conn.getresponse()
     body = response.read()
