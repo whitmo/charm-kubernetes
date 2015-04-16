@@ -199,10 +199,10 @@ def register_machine(apiserver, retry=False):
         r.data['resources']['capacity']['cpu'] = cpus
 
         response = r.register(parsed.hostname, parsed.port,
-                              "/api/v1beta2/nodes")
+                              "/api/v1beta3/nodes")
 
     print(response)
-    print("Response status:%s reason:%s body:%s" % (
+    
         response.status, response.reason, result))
     result = json.loads(body)
 
@@ -211,7 +211,6 @@ def register_machine(apiserver, retry=False):
     except ValueError:
         # This happens when we have already registered
         pass
-
 
 def setup_kubernetes_group():
     output = subprocess.check_output(['groups', 'kubernetes'])
