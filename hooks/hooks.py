@@ -190,26 +190,25 @@ def register_machine(apiserver, retry=False):
     cpus = os.sysconf("SC_NPROCESSORS_ONLN")
 
     registration_request = Registrator()
-    with registration_request as r:
-        r.data['Kind'] = 'minion'
-        r.data['id'] = private_address
-        r.data['name'] = private_address
-        r.data['metadata']['name'] = private_address
-        r.data['resources']['capacity']['mem'] = mem + ' K'
-        r.data['resources']['capacity']['cpu'] = cpus
+    registration_request.data['Kind'] = 'Minion'
+    registration_request.data['id'] = private_address
+    registration_request.data['name'] = private_address
+    registration_request.data['metadata']['name'] = private_address
+    registration_request.data['spec']['capacity']['mem'] = mem + ' K'
+    registration_request.data['spec']['capacity']['cpu'] = cpus
+    registration_request.data['status']['hostIP'] = private_address
 
-        response = r.register(parsed.hostname, parsed.port,
-                              "/api/v1beta3/nodes")
+    response, result = registration_request.register(parsed.hostname,
+                                                     parsed.port,
+                                                     "/api/v1beta3/nodes")
 
     print(response)
-    
-        response.status, response.reason, result))
-    result = json.loads(body)
 
     try:
         registration_request.command_succeeded(response, result)
     except ValueError:
         # This happens when we have already registered
+        # for now this is OK
         pass
 
 def setup_kubernetes_group():

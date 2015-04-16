@@ -43,7 +43,7 @@ class Registrator:
         result = json.loads(body)
         print("Response status:%s reason:%s body:%s" % (
         response.status, response.reason, result))
-        return result
+        return response, result
 
 
     def update(self):
