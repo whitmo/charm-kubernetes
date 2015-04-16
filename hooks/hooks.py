@@ -196,6 +196,7 @@ def register_machine(apiserver, retry=False):
     registration_request.data['metadata']['name'] = private_address
     registration_request.data['spec']['capacity']['mem'] = mem + ' K'
     registration_request.data['spec']['capacity']['cpu'] = cpus
+    registration_request.data['spec']['externalID'] = private_address
     registration_request.data['status']['hostIP'] = private_address
 
     response, result = registration_request.register(parsed.hostname,
