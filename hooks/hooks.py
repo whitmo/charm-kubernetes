@@ -15,6 +15,8 @@ from charmhelpers.core import hookenv, host
 from kubernetes_installer import KubernetesInstaller
 from path import path
 
+from lib.registrator import Registrator
+
 hooks = hookenv.Hooks()
 
 
@@ -179,8 +181,6 @@ def render_upstart(name, data):
 
 def register_machine(apiserver, retry=False):
     parsed = urlparse.urlparse(apiserver)
-    headers = {"Content-type": "application/json",
-               "Accept": "application/json"}
     # identity = hookenv.local_unit().replace('/', '-')
     private_address = hookenv.unit_private_ip()
 
@@ -189,50 +189,28 @@ def register_machine(apiserver, retry=False):
         mem = info.strip().split(":")[1].strip().split()[0]
     cpus = os.sysconf("SC_NPROCESSORS_ONLN")
 
-    request = _encode({
-        'Kind': 'Minion',
-        # These can only differ for cloud provider backed instances?
-        'ID': private_address,
-        'HostIP': private_address,
-        'metadata': {
-            'name': private_address,
-        },
-        'resources': {
-            'capacity': {
-                'mem': mem + ' K',
-                'cpu': cpus}}})
+    registration_request = Registrator()
+    registration_request.data['Kind'] = 'Minion'
+    registration_request.data['id'] = private_address
+    registration_request.data['name'] = private_address
+    registration_request.data['metadata']['name'] = private_address
+    registration_request.data['spec']['capacity']['mem'] = mem + ' K'
+    registration_request.data['spec']['capacity']['cpu'] = cpus
+    registration_request.data['spec']['externalID'] = private_address
+    registration_request.data['status']['hostIP'] = private_address
 
-    # print("Registration request %s" % request)
-    conn = httplib.HTTPConnection(parsed.hostname, parsed.port)
-    conn.request("POST", "/api/v1beta1/minions", json.dumps(request), headers)
+    response, result = registration_request.register(parsed.hostname,
+                                                     parsed.port,
+                                                     "/api/v1beta3/nodes")
 
-    response = conn.getresponse()
-    body = response.read()
-    print(body)
-    result = json.loads(body)
-    print("Response status:%s reason:%s body:%s" % (
-        response.status, response.reason, result))
+    print(response)
 
-    if response.status in (200, 201):
-        print("Registered")
-    elif response.status in (409,):
-        print("Status conflict")
-        # The kubernetes API documentation suggests doing a put in this case:
-        # issue a PUT/update to modify the existing object
-        conn.request("PUT", "/api/v1beta1/minions", json.dumps(request),
-                     headers)
-    elif not retry and response.status in (500,) and result.get(
-            'message', '').startswith('The requested resource does not exist'):
-        # There's something fishy in the kube api here (0.4 dev), first time we
-        # go to register a new minion, we always seem to get this error.
-        # https://github.com/GoogleCloudPlatform/kubernetes/issues/1995
-        time.sleep(1)
-        print("Retrying registration...")
-        return register_machine(apiserver, retry=True)
-    else:
-        print("Registration error")
-        raise RuntimeError("Unable to register machine with %s" % request)
-
+    try:
+        registration_request.command_succeeded(response, result)
+    except ValueError:
+        # This happens when we have already registered
+        # for now this is OK
+        pass
 
 def setup_kubernetes_group():
     output = subprocess.check_output(['groups', 'kubernetes'])
