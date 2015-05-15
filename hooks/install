@@ -31,12 +31,14 @@ apt-get install -q -y \
 pip install path.py
 
 # Create the necessary kubernetes group.
-groupadd kubernetes
+groupadd -f kubernetes
 useradd -d /var/lib/kubernetes \
     -g kubernetes \
     -s /sbin/nologin \
     --system \
-    kubernetes
+    kubernetes \
+    || true
+
 
 install -d -m 0744 -o kubernetes -g kubernetes /var/lib/kubernetes
 install -d -m 0744 -o kubernetes -g kubernetes /etc/kubernetes/manifests
